@@ -10,10 +10,7 @@ import com.opencsv.CSVReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class DataImportService {
@@ -44,6 +41,7 @@ public class DataImportService {
             while ((nextLine = reader.readNext()) != null) {
                 if (nextLine.length < 4) {
                     // Skip any line that doesn't have the expected number of columns
+                    System.err.println("Skipping line due to insufficient columns: " + Arrays.toString(nextLine));
                     continue;
                 }
 
@@ -54,28 +52,43 @@ public class DataImportService {
                     String name = nextLine[2].trim(); // Name
                     String dobString = nextLine[3].trim(); // Dob
 
-                    // Insert into source_master
+                    // Log the data being processed
+                    System.out.println("Processing row: " + Arrays.toString(nextLine));
+
+                    // Insert into source_master if it does not exist
                     if (!sourceIdToUuidMap.containsKey(sourceId)) {
                         SourceMaster master = new SourceMaster();
                         master.setSourceId(sourceId);
-                        sourceMasterRepository.save(master);
-                        sourceIdToUuidMap.put(sourceId, UUID.fromString(master.getUuid().toString())); // Ensure this returns a UUID
+                        sourceMasterRepository.save(master); // Save and get the saved entity
+
+                        // Update the UUID map with the newly created UUID
+                        sourceIdToUuidMap.put(sourceId, UUID.fromString(master.getUuid()));
+                        System.out.println("Inserted SourceMaster for sourceId: " + sourceId + ", UUID: " + master.getUuid());
                     }
 
                     // Insert into source_details
                     SourceDetails details = new SourceDetails();
-                    details.setSourceId(String.valueOf(sourceIdToUuidMap.get(sourceId))); // Convert UUID to String
+                    details.setSourceId(sourceIdToUuidMap.get(sourceId).toString()); // Convert UUID to String
                     details.setOccupation(occupation);
                     details.setName(name);
                     details.setDob(dobString);
+
+                    // Save the details record
                     sourceDetailsRepository.save(details);
+                    System.out.println("Inserted SourceDetails: " + details);
 
                 } catch (NumberFormatException e) {
                     // Handle the case where the sourceId or other fields cannot be parsed
                     System.err.println("Skipping invalid row: " + e.getMessage());
+                } catch (Exception e) {
+                    // Catch any other exceptions and log them
+                    System.err.println("Error inserting row: " + e.getMessage());
                 }
             }
         }
     }
+
+
+
 
 }

@@ -9,7 +9,17 @@ import java.util.UUID;
 public class SourceDetails {
 
 
-@Id
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    @Id
+@Column(name = "uuid", columnDefinition = "CHAR(36)")  // Ensure it's stored as a 36-character string
+private String uuid = UUID.randomUUID().toString();  // Store UUID as a String
     @Column(name = "source_id", nullable = false, columnDefinition = "CHAR(36)")
     private String sourceId;  // Also store this as a string
     private String name;
